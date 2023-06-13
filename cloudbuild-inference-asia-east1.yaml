@@ -1,0 +1,50 @@
+steps:
+  # [build or rebuild image]
+  - name: 'gcr.io/cloud-builders/docker' # standard container name
+    # exec command
+    entrypoint: docker
+    args: ['build', '-t', 'gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME-$SHORT_SHA-$TAG_NAME', '.']
+
+  # [push image]
+  - name: 'gcr.io/cloud-builders/docker'
+    entrypoint: docker
+    args: ['push', 'gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME-$SHORT_SHA-$TAG_NAME']
+
+
+  # [deploy image]
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        if [[ "$BRANCH_NAME" =~ "dev" ]]; then
+          service_account='<your-service-account-for-dev>'
+        else
+          service_account='<your-service-account-for-prod>'
+        fi
+        gcloud run deploy your-cloud-run-service-name \                  # gcloud run deploy chatapp-v1-inference-asia-east1\
+          --cpu 2 \
+          --memory 8Gi \
+          --timeout 60 \
+          --region asia-east1 \
+          --min-instances 0 \
+          --max-instances 10 \
+          --image gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME-$SHORT_SHA-$TAG_NAME \
+          --port 8080 \
+          --platform managed \
+          --allow-unauthenticated \
+          --project "$PROJECT_ID" \
+          --service-account "$service_account"
+
+
+## GCR image name
+images:
+  - 'gcr.io/$PROJECT_ID/$REPO_NAME:$BRANCH_NAME-$SHORT_SHA-$TAG_NAME'
+
+
+
+options:
+  dynamic_substitutions: true
+
+
+
