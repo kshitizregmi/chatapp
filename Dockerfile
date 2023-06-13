@@ -18,4 +18,4 @@ RUN pip3 install -r requirements-inference.txt
 
 COPY . .
 # RUN python3 -m src.api.download_model
-CMD exec uvicorn src.api.main:app --port $PORT --host 0.0.0.0 --workers 1
+CMD exec uvicorn main:app --port $PORT --host 0.0.0.0 --workers 1
